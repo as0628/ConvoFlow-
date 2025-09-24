@@ -4,7 +4,7 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
   const identifier = document.getElementById('identifier').value.trim(); // email or phone
   const password = document.getElementById('password').value.trim();
 
-  // Determine if the identifier is email or phone
+  // Detect email vs phone
   const isEmail = identifier.includes("@");
   const payload = isEmail
     ? { email: identifier, password }
@@ -21,17 +21,15 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
     console.log("Login response:", data);
 
     if (res.ok) {
-      // Save JWT and user details
+      // Save JWT + user details
       localStorage.setItem("token", data.token);
       localStorage.setItem("userId", data.userId);
-      localStorage.setItem("isPremium", data.isPremium);
+      localStorage.setItem("name", data.name);   // optional, useful for chat UI
+      localStorage.setItem("email", data.email);
+      localStorage.setItem("phone", data.phone);
 
-      // Redirect based on premium status
-      if (data.isPremium === 1 || data.isPremium === true) {
-        window.location.href = "premiumexpense.html";
-      } else {
-        window.location.href = "expense.html";
-      }
+      // Redirect to chat window
+      window.location.href = "chat.html";
     } else {
       alert(data.error || "Login failed");
     }

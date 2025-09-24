@@ -6,6 +6,7 @@ const path = require("path");
 require("dotenv").config();
 
 const signupRoutes = require("./routes/signupRoutes");
+const chatRoutes = require("./routes/chatRoutes");
 
 const app = express();
 
@@ -27,6 +28,7 @@ app.use(express.static(path.join(__dirname, "public"))); // /public folder acces
 
 //Routes
 app.use("/api/auth", signupRoutes);
+app.use("/api/chat", chatRoutes);
 
 
 app.get("/", (req, res) => {
