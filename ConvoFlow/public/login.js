@@ -1,14 +1,20 @@
 document.getElementById('login-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   
-  const email = document.getElementById('email').value.trim();
+  const identifier = document.getElementById('identifier').value.trim(); // email or phone
   const password = document.getElementById('password').value.trim();
+
+  // Determine if the identifier is email or phone
+  const isEmail = identifier.includes("@");
+  const payload = isEmail
+    ? { email: identifier, password }
+    : { phone: identifier, password };
 
   try {
     const res = await fetch("http://localhost:3000/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password })
+      body: JSON.stringify(payload)
     });
     
     const data = await res.json();

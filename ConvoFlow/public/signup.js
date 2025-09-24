@@ -5,9 +5,10 @@ document.getElementById("auth-form").addEventListener("submit", async (e) => {
 
   const name = e.target.name.value.trim();
   const email = e.target.email.value.trim();
+  const phone = e.target.phone.value.trim();   // ✅ get phone number
   const password = e.target.password.value;
 
-  const payload = { name, email, password };
+  const payload = { name, email, phone, password }; // ✅ include phone
   console.log("Form submission payload:", payload);
 
   try {

@@ -4,11 +4,16 @@ require("dotenv").config();                  // Load environment variables
 const SECRET_KEY = process.env.SECRET_KEY || "defaultsecret";
 const Signup = require('../models/signupModel');
 
+// =====================
+//        SIGNUP
+// =====================
 const signup = async (req, res) => {
-  const { name, email, password } = req.body;
-  if (!name || !email || !password) {
+  const { name, email, password, phone } = req.body;   // added phone here
+
+  if (!name || !email || !password || !phone) {
     return res.status(400).json({ error: 'All fields are required' });
   }
+
   try {
     // Check if user already exists
     const existing = await Signup.findOne({ where: { email } });
@@ -24,6 +29,7 @@ const signup = async (req, res) => {
       name,
       email,
       password: hashed,
+      phone,   // save phone number too
     });
 
     res.status(201).json({
@@ -41,28 +47,32 @@ const signup = async (req, res) => {
 //        LOGIN
 // =====================
 const login = async (req, res) => {
-  const { email, password } = req.body;
+  const { email, phone, password } = req.body;
 
-  if (!email || !password) {
-    return res.status(400).json({ error: 'All fields are required' });
+  // User must give either email or phone + password
+  if ((!email && !phone) || !password) {
+    return res.status(400).json({ error: 'Email/Phone and password are required' });
   }
 
   try {
-    // Find user by email
-    const user = await Signup.findOne({ where: { email } });
+    // Find user by email OR phone
+    const user = await Signup.findOne({ 
+      where: email ? { email } : { phone } 
+    });
+
     if (!user) {
-      return res.status(400).json({ error: 'Invalid email or password' });
+      return res.status(400).json({ error: 'Invalid email/phone or password' });
     }
 
-    // Compare entered password with stored hashed password
+    // Compare entered password with hashed password
     const valid = await bcrypt.compare(password, user.password);
     if (!valid) {
-      return res.status(400).json({ error: 'Invalid email or password' });
+      return res.status(400).json({ error: 'Invalid email/phone or password' });
     }
 
     // Generate JWT token
     const token = jwt.sign(
-      { id: user.id, email: user.email},
+      { id: user.id, email: user.email, phone: user.phone },
       SECRET_KEY,
       { expiresIn: "1h" }
     );
@@ -71,7 +81,9 @@ const login = async (req, res) => {
       message: "Login successful",
       token,
       userId: user.id,
-    
+      name: user.name,
+      email: user.email,
+      phone: user.phone
     });
 
   } catch (err) {
@@ -80,6 +92,5 @@ const login = async (req, res) => {
   }
 };
 
+
 module.exports = { signup, login };
-
-
