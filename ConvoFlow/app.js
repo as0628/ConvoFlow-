@@ -3,57 +3,40 @@ const cors = require("cors");
 const morgan = require("morgan");
 const fs = require("fs");
 const path = require("path");
-require("dotenv").config();
 const http = require("http");
-const { Server } = require("socket.io");
+require("dotenv").config();
 
 const signupRoutes = require("./routes/signupRoutes");
 const chatRoutes = require("./routes/chatRoutes");
+const initSocket = require("./socket");
 
 const app = express();
-const server = http.createServer(app); // ✅ correct
-const io = new Server(server, {
-  cors: { origin: "*" }
-});
 
+// middleware
 app.use(cors());
-app.use(express.json()); // parses JSON from requests into JS objects
-app.use(express.urlencoded({ extended: true })); // parses HTML form data into JS objects
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// Logging requests to access.log
+// logging
 const accessLogStream = fs.createWriteStream(
   path.join(__dirname, "access.log"),
   { flags: "a" }
 );
+app.use(morgan("combined", { stream: accessLogStream }));
 
-app.use(morgan("combined", { stream: accessLogStream })); // log requests
+// static files
+app.use(express.static(path.join(__dirname, "public")));
 
-// Serve static files
-app.use(express.static(path.join(__dirname, "public"))); 
-
-// Routes
+// routes
 app.use("/api/auth", signupRoutes);
 app.use("/api/chat", chatRoutes);
 
-// Socket.IO handling
-io.on("connection", (socket) => {
-  console.log("✅ A user connected");
-
-  socket.on("chatMessage", (msg) => {
-    io.emit("chatMessage", msg); // broadcast message
-  });
-
-  socket.on("disconnect", () => {
-    console.log("❌ A user disconnected");
-  });
-});
-
-// Serve home.html at root
+// home
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public/home.html"));
 });
 
-// Error handler
+// error handler
 app.use((err, req, res, next) => {
   console.error(`[${req.method}] ${req.url} → Error:`, err.stack);
   res.status(err.status || 500).json({
@@ -62,9 +45,14 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Start server
+// create server + attach socket
+const server = http.createServer(app);
+initSocket(server);
+
+// start
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`)); // ✅ must use server.listen
+server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+
 
 
 
