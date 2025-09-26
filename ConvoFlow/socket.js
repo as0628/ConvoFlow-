@@ -1,12 +1,14 @@
 const { Server } = require("socket.io");
 const jwt = require("jsonwebtoken");
 const Chat = require("./models/chatModel");
+const personalChatHandler = require("./handlers/personalChat");
+
 const SECRET_KEY = process.env.SECRET_KEY || "defaultsecret";
 
 function initSocket(server) {
   const io = new Server(server, { cors: { origin: "*" } });
 
-  // auth middleware
+  // 🔑 Auth middleware
   io.use((socket, next) => {
     const token = socket.handshake.auth.token;
     if (!token) return next(new Error("No token"));
@@ -20,10 +22,11 @@ function initSocket(server) {
     }
   });
 
-  // events
+  // 🔑 Main connection handler
   io.on("connection", (socket) => {
-    console.log(`✅ User connected: ${socket.user.name} (ID: ${socket.user.id})`);
+    console.log(`✅ User connected: ${socket.user.name} (${socket.user.email})`);
 
+    // === Group chat messages ===
     socket.on("chatMessage", async (msgObj) => {
       try {
         const text = typeof msgObj === "string" ? msgObj : msgObj.message;
@@ -45,8 +48,11 @@ function initSocket(server) {
       }
     });
 
+    // === Personal chat messages ===
+    personalChatHandler(io, socket);
+
     socket.on("disconnect", () => {
-      console.log(`❌ User disconnected: ${socket.user?.name || "Unknown"}`);
+      console.log(`❌ User disconnected: ${socket.user?.email || "Unknown"}`);
     });
   });
 }

@@ -3,52 +3,85 @@ const messagesDiv = document.getElementById("messages");
 const input = document.getElementById("messageInput");
 const sendBtn = document.getElementById("sendBtn");
 
+const recipientInput = document.getElementById("recipientInput");
+const connectBtn = document.getElementById("connectBtn");
+const statusText = document.getElementById("status");
+
+let roomId = null; // will be set when connected
+let myEmail = localStorage.getItem("email");
+
 // Connect to Socket.IO backend with JWT
 const socket = io("http://localhost:3000", {
   auth: { token }
 });
 
-// Fetch old messages from DB
-async function loadMessages() {
+// Helper → Generate unique roomId
+function generateRoomId(user1, user2) {
+  return [user1, user2].sort().join("_");
+}
+
+// Connect to recipient
+connectBtn.addEventListener("click", async () => {
+  const recipient = recipientInput.value.trim();
+  if (!recipient) {
+    alert("Enter recipient email or phone");
+    return;
+  }
+
   try {
-    const res = await fetch("/api/chat/messages", {
+    // ✅ Validate recipient via API
+    const res = await fetch(`/api/users/validate?email=${recipient}`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     const data = await res.json();
+
+    if (!data.exists) {
+      statusText.textContent = "❌ User not found.";
+      return;
+    }
+
+    // ✅ Generate roomId
+    roomId = generateRoomId(myEmail, recipient);
+
+    // ✅ Join the room
+    socket.emit("join_room", { roomId, recipient });
+    statusText.textContent = `✅ Connected with ${recipient}`;
+
+    // Clear chat box for this room
     messagesDiv.innerHTML = "";
-    data.forEach(addMessageToUI);
-    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
   } catch (err) {
-    console.error("Error loading messages:", err);
+    console.error("Error validating recipient:", err);
   }
-}
+});
 
 // Render one message
 function addMessageToUI(msg) {
   const div = document.createElement("div");
   div.classList.add("message");
-  div.innerHTML = `<strong>${msg.user || msg.Signup?.name || "Unknown"}:</strong> 
+  div.innerHTML = `<strong>${msg.sender || "Unknown"}:</strong> 
                    ${msg.message} 
                    <small>${new Date(msg.createdAt).toLocaleTimeString()}</small>`;
   messagesDiv.appendChild(div);
   messagesDiv.scrollTop = messagesDiv.scrollHeight;
 }
 
-// Send message (only via socket)
+// Send personal message
 sendBtn.addEventListener("click", () => {
   const text = input.value.trim();
-  if (!text) return;
+  if (!text || !roomId) return;
 
-  // Emit live event → server will save to DB + broadcast
-  socket.emit("chatMessage", { message: text });
+  const msgData = {
+    roomId,
+    message: text,
+    sender: myEmail
+  };
 
+  socket.emit("personalMessage", msgData);
   input.value = "";
 });
 
-// Listen for live messages
-socket.on("chatMessage", (msg) => {
+// Listen for personal messages
+socket.on("personalMessage", (msg) => {
   addMessageToUI(msg);
 });
-
-// Initial load
-loadMessages();

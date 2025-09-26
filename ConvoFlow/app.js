@@ -9,6 +9,7 @@ require("dotenv").config();
 const signupRoutes = require("./routes/signupRoutes");
 const chatRoutes = require("./routes/chatRoutes");
 const initSocket = require("./socket");
+const userRoutes = require("./routes/userRoutes");
 
 const app = express();
 
@@ -30,6 +31,7 @@ app.use(express.static(path.join(__dirname, "public")));
 // routes
 app.use("/api/auth", signupRoutes);
 app.use("/api/chat", chatRoutes);
+app.use("/api/users", userRoutes);
 
 // home
 app.get("/", (req, res) => {

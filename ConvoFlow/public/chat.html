@@ -3,32 +3,26 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Group Chat</title>
+  <title>Private Chat</title>
   <link rel="stylesheet" href="chat.css" />
-  <style>
-    /* Optional: style logout button */
-    #logoutBtn {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      padding: 5px 10px;
-      background-color: #ff4d4d;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    #logoutBtn:hover {
-      background-color: #ff1a1a;
-    }
-  </style>
 </head>
 <body>
   <button id="logoutBtn">Logout</button>
 
   <div class="chat-container">
-    <h2>Group Chat</h2>
+    <h2>Private Chat</h2>
+
+    <!-- Connect to a user -->
+    <div class="connect-box">
+      <input type="text" id="recipientInput" placeholder="Enter email or phone to chat" />
+      <button id="connectBtn">Connect</button>
+      <p id="status"></p>
+    </div>
+
+    <!-- Messages -->
     <div id="messages" class="messages"></div>
+
+    <!-- Send box -->
     <div class="send-box">
       <input type="text" id="messageInput" placeholder="Type a message..." />
       <button id="sendBtn">Send</button>
@@ -39,16 +33,13 @@
   <script src="/socket.io/socket.io.js"></script>
   <script src="chat.js"></script>
   <script>
+    // Logout functionality
     const logoutBtn = document.getElementById("logoutBtn");
-
     logoutBtn.addEventListener("click", () => {
-      // Clear stored info
       localStorage.removeItem("token");
       localStorage.removeItem("userId");
       localStorage.removeItem("name");
       localStorage.removeItem("email");
-      
-      // Redirect to signup/login page
       window.location.href = "signup.html";
     });
   </script>
